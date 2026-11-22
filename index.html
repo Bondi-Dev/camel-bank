@@ -173,6 +173,23 @@
   .yn button.no { background: #6b2a1a; }
   .tag.Vote { background: #e6e3f7; color: #4b3f9a; }
 
+  /* Escrow */
+  body.escrowing main > :not(#escrowView) { display: none !important; }
+  #escrowView { max-width: 760px; margin: 0 auto; }
+  #escrowView .panel { margin-bottom: 18px; }
+  .tag.Escrow { background: #f3e2c2; color: #7a4b00; }
+  .deal { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 12px 14px; margin-top: 10px; }
+  .deal .dh { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .deal .dh b { font-size: 15px; } .deal .dh .amt { font-family: Georgia, serif; font-weight: 700; font-size: 20px; }
+  .deal .terms { margin: 8px 0 6px; padding: 8px 10px; background: var(--sand); border-radius: 9px; font-size: 14px; white-space: pre-wrap; }
+  .deal .terms b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 2px; }
+  .deal .act { display: grid; grid-template-columns: 1fr 110px; gap: 8px; margin-top: 8px; }
+  .deal .act button.go { margin-top: 8px; grid-column: 1 / -1; }
+  .deal.closed { background: #faf6ee; } .deal.closed .terms { background: #f3ecdf; }
+  textarea.terms-in { width: 100%; min-height: 96px; padding: 10px 12px; font: inherit; color: var(--ink); background: #fff;
+                      border: 1px solid var(--line); border-radius: 10px; resize: vertical; }
+  .heldnote { font-size: 12px; color: #7a4b00; margin-top: 8px; }
+
   /* Get-the-app sheet */
   .modal { position: fixed; inset: 0; background: rgba(20,14,8,.55); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
   .modal .sheet { background: var(--card); width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; padding: 22px 20px 26px;
@@ -206,6 +223,7 @@
     <div class="tabs">
       <button type="button" data-tab="bank" class="on">🏦 Bank</button>
       <button type="button" data-tab="vote">🗳️ Banker vote</button>
+      <button type="button" data-tab="escrow">🤝 Escrow</button>
       <button type="button" class="appbtn" id="appBtn">📲 Get the app</button>
     </div>
   </div>
@@ -287,9 +305,58 @@
     </div>
   </section>
 
+  <section id="escrowView" class="hidden">
+    <div class="panel">
+      <h2>Escrow</h2>
+      <p style="margin:0 0 6px">Put camels aside for a job. The Central Bank holds them until the job is done, then pays them out when <b>both</b> of you confirm with your PINs.</p>
+      <div class="stats" style="margin-top:10px"><div class="stat"><b id="eHeld">0</b><span>camels held in escrow</span></div><div class="stat"><b id="eCount">0</b><span>open deals</span></div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Open deals</h2>
+      <div id="eOpen"><div class="loading">Checking the vault…</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Put camels in escrow</h2>
+      <form id="escrowForm" autocomplete="off">
+        <div class="row">
+          <div><label for="eFrom">From</label><select id="eFrom"></select></div>
+          <div><label for="eTo">Held for</label><select id="eTo"></select></div>
+        </div>
+        <div class="row">
+          <div><label for="eAmount">Camels</label><input id="eAmount" type="number" min="1" max="1000" step="1" value="1" inputmode="numeric"></div>
+          <div><label for="ePin">Your PIN</label><input id="ePin" type="password" inputmode="numeric" maxlength="8" placeholder="••••"></div>
+        </div>
+        <label for="eTerms">The deal: what exactly counts as done?</label>
+        <textarea id="eTerms" class="terms-in" maxlength="500" placeholder="e.g. Kim mows the front and back lawn and bags the clippings by Sunday 6 p.m."></textarea>
+        <div class="hint" id="eTermsHint">Be specific: what, how well, and by when. This is what both of you will confirm against, and it goes on the ledger.</div>
+        <div class="warn-box" id="eWarn">Once in escrow you can't take these camels back. They are paid out when you both confirm the deal is done, or returned to you only if the banker (or the person they're held for) cancels it.</div>
+        <button class="go" type="submit" id="eBtn">Put in escrow 🤝</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>Closed deals</h2>
+      <div id="eClosed"></div>
+    </div>
+
+    <div class="panel rules">
+      <h2>How escrow works</h2>
+      <ul>
+        <li><b>1. Agree the deal.</b> Write exactly what counts as done. It is recorded on the ledger and emailed to both of you.</li>
+        <li><b>2. The camels are held.</b> They leave your balance and sit in the Central Bank, marked as held in escrow. You can't take them back, and Central Bank payouts can't touch them.</li>
+        <li><b>3. Both confirm.</b> When the job is done, each of you confirms on this tab with your PIN. Once both have, the camels are paid out automatically.</li>
+        <li><b>4. If it falls through.</b> The banker can return the camels to the sender with their PIN, or the person they're held for can cancel. The banker can't return a deal they sent themselves.</li>
+        <li>The ledger shows every step, e.g. <i>Escrow deal completed, sent from Sarah Bondi to Kim Bondi</i> or <i>Escrow deal incomplete, returned to Sarah Bondi</i>.</li>
+      </ul>
+    </div>
+  </section>
+
   <section id="balances">
     <h2>Balances</h2>
     <div class="grid" id="cards"><div class="loading">Counting camels…</div></div>
+    <div class="heldnote hidden" id="heldNote"></div>
     <div class="hint">Tap an account to see its statement.</div>
   </section>
 
@@ -516,6 +583,8 @@
       if (m.name !== S.bank) {
         var fl = el('div', 'flags' + (m.hasPin ? '' : ' nopin'), m.hasPin ? (m.hasEmail ? '✉ Receipts on' : 'PIN set') : 'No PIN yet');
         b.appendChild(fl);
+      } else if (S.escrow && S.escrow.held) {
+        b.appendChild(el('div', 'flags', '🔒 ' + S.escrow.held + ' held in escrow*'));
       }
       b.onclick = function () { setFilter(filter === m.name ? '' : m.name); };
       cards.appendChild(b);
@@ -535,6 +604,7 @@
     renderLog();
     updateHints();
     renderVote();
+    renderEscrow();
   }
 
   function setFilter(name) { filter = name; shown = 60; render(S); if (name) $('log').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -545,11 +615,13 @@
     var box = $('txs'); box.innerHTML = '';
     if (!rows.length) { box.appendChild(el('div', 'empty', 'No transactions yet.')); }
     rows.slice(0, shown).forEach(function (r) {
-      var isAcct = r.type === 'Account' || r.type === 'Vote';
+      var isAcct = r.type === 'Account' || r.type === 'Vote' || (r.type === 'Escrow' && !r.camels);
       var tx = el('div', 'tx' + (isAcct ? ' acctev' : ''));
       var who = el('div', 'who');
       if (r.type === 'Vote') {
         who.textContent = '🗳️ ' + (r.by === 'Camel Bank' ? 'Vote result' : r.from);
+      } else if (r.type === 'Escrow' && !r.camels) {
+        who.textContent = '🤝 ' + r.from;
       } else if (isAcct) {
         who.textContent = r.to;
       } else {
@@ -567,7 +639,7 @@
       meta.appendChild(el('span', null, fmtDate(r.ts)));
       meta.appendChild(el('span', null, r.id));
       if (r.ref) meta.appendChild(el('span', null, '↩ ' + r.ref));
-      if (r.by && r.type !== 'Vote' && (isAcct ? r.by !== r.to : r.by !== r.from)) meta.appendChild(el('span', null, 'by ' + r.by));
+      if (r.by && r.type !== 'Vote' && r.by !== 'Camel Bank' && (isAcct ? r.by !== r.to : r.by !== r.from)) meta.appendChild(el('span', null, 'by ' + r.by));
       tx.appendChild(meta);
       box.appendChild(tx);
     });
@@ -720,9 +792,11 @@
   function showTab(t) {
     tab = t;
     document.body.classList.toggle('voting', t === 'vote');
+    document.body.classList.toggle('escrowing', t === 'escrow');
     $('voteView').classList.toggle('hidden', t !== 'vote');
+    $('escrowView').classList.toggle('hidden', t !== 'escrow');
     document.querySelectorAll('.tabs [data-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === t); });
-    if (t === 'vote') { showJoin(false); window.scrollTo(0, 0); }
+    if (t !== 'bank') { showJoin(false); window.scrollTo(0, 0); }
   }
 
   function renderVote() {
@@ -822,6 +896,109 @@
   });
   $('voteBarBtn').onclick = function () { showTab('vote'); };
 
+  /* ---------- Escrow ---------- */
+  function renderEscrow() {
+    if (!S || !S.escrow) return;
+    var X = S.escrow, people = S.members.filter(function (m) { return m.active && m.name !== S.bank; }).map(function (m) { return m.name; });
+    $('eHeld').textContent = X.held; $('eCount').textContent = X.open.length;
+    $('heldNote').textContent = X.held ? '* ' + X.held + ' of the ' + balanceOf(S.bank) + ' camels in the Central Bank are held in escrow for ' +
+      X.open.length + ' open deal' + (X.open.length === 1 ? '' : 's') + '. They belong to those deals, not to the bank.' : '';
+    $('heldNote').classList.toggle('hidden', !X.held);
+
+    var box = $('eOpen'); box.innerHTML = '';
+    if (!X.open.length) box.appendChild(el('div', 'hint', 'No camels are held in escrow right now.'));
+    X.open.forEach(function (d) { box.appendChild(dealCard(d, true)); });
+    var cbox = $('eClosed'); cbox.innerHTML = '';
+    if (!X.closed.length) cbox.appendChild(el('div', 'hint', 'No closed deals yet.'));
+    X.closed.forEach(function (d) { cbox.appendChild(dealCard(d, false)); });
+
+    fillSelect($('eFrom'), people, { initial: store('camelbank.me') || '' });
+    fillSelect($('eTo'), people.filter(function (n) { return n !== $('eFrom').value; }));
+    $('eTermsHint').textContent = 'Be specific: what, how well, and by when (at least ' + X.termsMin + ' characters). ' +
+      'This is what both of you will confirm against, and it goes on the ledger. ' + $('eTerms').value.length + '/' + X.termsMax;
+  }
+
+  function dealCard(d, open) {
+    var c = el('div', 'deal' + (open ? '' : ' closed'));
+    var h = el('div', 'dh');
+    var who = el('b', null, d.from + ' → ' + d.for); h.appendChild(who);
+    h.appendChild(el('span', 'amt', d.camels + ' 🐪'));
+    c.appendChild(h);
+    var t = el('div', 'terms'); t.appendChild(el('b', null, 'Done when')); t.appendChild(document.createTextNode(d.terms)); c.appendChild(t);
+    var meta = el('div', 'meta hint');
+    meta.textContent = 'Deal ' + d.id + ' · opened ' + fmtDate(d.ts);
+    c.appendChild(meta);
+    if (!open) {
+      var res = el('div', 'tally');
+      res.appendChild(el('span', 'chip ' + (d.status === 'completed' ? 'yes' : 'no'),
+        d.status === 'completed' ? '✓ Completed, paid to ' + d.for : '↩ Returned to ' + d.from));
+      res.appendChild(el('span', null, d.closedId + ' · ' + fmtDate(d.closedTs)));
+      c.appendChild(res);
+      return c;
+    }
+    var chips = el('div', 'tally');
+    chips.appendChild(el('span', 'chip ' + (d.senderOk ? 'yes' : ''), (d.senderOk ? '✓ ' : '… ') + d.from + (d.senderOk ? ' confirmed' : ' to confirm')));
+    chips.appendChild(el('span', 'chip ' + (d.receiverOk ? 'yes' : ''), (d.receiverOk ? '✓ ' : '… ') + d.for + (d.receiverOk ? ' confirmed' : ' to confirm')));
+    c.appendChild(chips);
+
+    var f = el('form', 'act'); f.autocomplete = 'off';
+    var sel = el('select'); sel.setAttribute('aria-label', 'Who are you and what do you want to do');
+    var opts = [];
+    if (!d.senderOk) opts.push(['confirm|' + d.from, d.from + ': confirm it\'s done']);
+    if (!d.receiverOk) opts.push(['confirm|' + d.for, d.for + ': confirm it\'s done']);
+    opts.push(['cancel|' + d.for, d.for + ': cancel, return camels to ' + firstName(d.from)]);
+    if (S.banker !== d.from) opts.push(['return|' + S.banker, 'Banker (' + S.banker + '): return to ' + firstName(d.from)]);
+    opts.forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); });
+    var me = store('camelbank.me');
+    opts.some(function (o) { if (o[0] === 'confirm|' + me) { sel.value = o[0]; return true; } });
+    var pin = el('input'); pin.type = 'password'; pin.inputMode = 'numeric'; pin.maxLength = 8; pin.placeholder = 'PIN'; pin.setAttribute('aria-label', 'PIN');
+    var btn = el('button', 'go', 'Confirm it\'s done'); btn.type = 'submit';
+    var note = el('input'); note.placeholder = 'Reason for returning (shown on the ledger)'; note.maxLength = 150;
+    note.className = 'hidden'; note.style.gridColumn = '1 / -1';
+    function sync() {
+      var a = sel.value.split('|')[0];
+      btn.textContent = a === 'confirm' ? 'Confirm it\'s done' : a === 'cancel' ? 'Cancel the deal' : 'Return to ' + d.from;
+      note.classList.toggle('hidden', a !== 'return');
+    }
+    sel.onchange = sync; sync();
+    f.appendChild(sel); f.appendChild(pin); f.appendChild(note); f.appendChild(btn);
+    f.onsubmit = function (ev) {
+      ev.preventDefault();
+      var parts = sel.value.split('|'), a = parts[0], name = parts.slice(1).join('|');
+      if (a === 'cancel' && !confirm('Cancel deal ' + d.id + ' and return ' + d.camels + ' camels to ' + d.from + '? This is final.')) return;
+      if (a === 'return' && !confirm('Return ' + d.camels + ' camels from deal ' + d.id + ' to ' + d.from + '? This is final.')) return;
+      busy(f, true);
+      call('escrowAction', { action: a, id: d.id, name: name, pin: pin.value, reason: note.value })
+        .then(function (res) { toast(res.message); if (a !== 'return') store('camelbank.me', name); render(res.state); })
+        .catch(function (e) { toast(errText(e), true); busy(f, false); });
+    };
+    c.appendChild(f);
+    return c;
+  }
+  function firstName(n) { return String(n).split(' ')[0]; }
+
+  $('eFrom').onchange = function () {
+    fillSelect($('eTo'), S.members.filter(function (m) { return m.active && m.name !== S.bank && m.name !== $('eFrom').value; }).map(function (m) { return m.name; }));
+  };
+  $('eTerms').oninput = function () { if (S && S.escrow) renderEscrowHint(); };
+  function renderEscrowHint() {
+    var X = S.escrow;
+    $('eTermsHint').textContent = 'Be specific: what, how well, and by when (at least ' + X.termsMin + ' characters). ' +
+      'This is what both of you will confirm against, and it goes on the ledger. ' + $('eTerms').value.length + '/' + X.termsMax;
+  }
+  $('escrowForm').onsubmit = function (ev) {
+    ev.preventDefault();
+    var f = this, req = { action: 'open', from: $('eFrom').value, to: $('eTo').value, amount: parseInt($('eAmount').value, 10),
+                          terms: $('eTerms').value, pin: $('ePin').value };
+    if (!confirm('Put ' + req.amount + ' camels in escrow for ' + req.to + '?\n\nDone when: ' + req.terms.trim() +
+                 '\n\nYou won\'t be able to take them back yourself.')) return;
+    busy(f, true);
+    call('escrowAction', req).then(function (res) {
+      toast(res.message); $('ePin').value = ''; $('eTerms').value = ''; $('eAmount').value = 1;
+      store('camelbank.me', req.from); render(res.state); window.scrollTo(0, 0);
+    }).catch(function (e) { toast(errText(e), true); }).then(function () { busy(f, false); });
+  };
+
   /* ---------- Get the app ---------- */
   $('appBtn').onclick = function () {
     var ua = navigator.userAgent || '';
@@ -861,7 +1038,7 @@
   showBankerFields();
   // A join link (…/exec?join=Name) opens the welcome screen for that person.
   function useParams(p) {
-    if (p.tab === 'vote') showTab('vote');
+    if (p.tab === 'vote' || p.tab === 'escrow') showTab(p.tab);
     if ('join' in p) {
       joinName = p.join || ''; showJoin(true);
       if (S) { render(S); if (member(joinName)) { $('joinName').value = joinName; updateJoin(); } }
