@@ -96,6 +96,7 @@
   .tag.Reversal { background: #e6e3f7; color: #4b3f9a; } .tag.Opening { background: #efe7d6; }
   .tag.Account { background: #e3eef7; color: #2b5a82; }
   .tag.Mint { background: #fff1c2; color: #8a5a00; }
+  .tag.Removal { background: #3a2e1a; color: #f3e3bd; }
   .tx.acctev .who { font-weight: 500; color: #4a3a2a; }
   .badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
            background: var(--terra); color: #fff; border-radius: 999px; padding: 1px 7px; margin-left: 4px; vertical-align: 2px; }
@@ -395,6 +396,7 @@
     <h2>Rules of the Bank</h2>
     <ul>
       <li>Camels move between accounts. Only the banker can create new ones, and every creation is shown on the ledger as a Mint and added to the total in circulation.</li>
+      <li>The banker can also remove camels from the Central Bank to control inflation, or after a member leaves and their camels have gone to the bank. Every removal is shown on the ledger as a Removal, with the reason, and taken off the total in circulation. It can't be undone.</li>
       <li>Every transaction is permanent and public. Mistakes are fixed with a reversal by the banker, never by deleting.</li>
       <li>A payment that takes you below zero is allowed, but costs a <b id="odRule">1</b>-camel overdraft penalty to the Central Bank.</li>
       <li>Illicit or dishonest camel dealings cost <b id="fraudRule">3</b> camels, paid to the Central Bank and then shared out among the other accounts.</li>
@@ -434,15 +436,16 @@
         <option value="addMember">Open a new account</option>
         <option value="mintBank">Add new camels to the Central Bank</option>
         <option value="mintAll">Give new camels to everyone</option>
+        <option value="removeCamels">Remove camels from circulation</option>
       </select>
       <div data-for="penalty removePin"><label for="bMember">Member</label><select id="bMember"></select></div>
       <div data-for="addMember"><label for="bNewName">New member's name</label><input id="bNewName" maxlength="40"></div>
-      <div data-for="penalty addMember mintBank mintAll"><label for="bAmount" id="bAmountLabel">Camels</label><input id="bAmount" type="number" min="0" step="1"></div>
+      <div data-for="penalty addMember mintBank mintAll removeCamels"><label for="bAmount" id="bAmountLabel">Camels</label><input id="bAmount" type="number" min="0" step="1"></div>
       <div data-for="reverse"><label for="bId">Transaction ID</label><input id="bId" placeholder="e.g. C0042"></div>
       <div data-for="distribute"><label for="bMode">Split</label>
         <select id="bMode"><option value="proportional">By balance (proportionally)</option><option value="even">Evenly</option></select></div>
       <div data-for="distribute mintAll"><label for="bExclude">Leave out</label><select id="bExclude"></select></div>
-      <div data-for="penalty distribute reverse removePin mintBank mintAll"><label for="bReason">Reason</label><input id="bReason" maxlength="200" placeholder="Optional, shown on the ledger"></div>
+      <div data-for="penalty distribute reverse removePin mintBank mintAll removeCamels"><label for="bReason">Reason</label><input id="bReason" maxlength="200" placeholder="Optional, shown on the ledger"></div>
       <div class="warn-box hidden" id="mintNote"></div>
       <label for="bPin">Banker's PIN</label>
       <input id="bPin" type="password" inputmode="numeric" maxlength="8" required>
@@ -605,6 +608,7 @@
     updateHints();
     renderVote();
     renderEscrow();
+    if ($('action').value === 'removeCamels') $('mintNote').textContent = removeNote();
   }
 
   function setFilter(name) { filter = name; shown = 60; render(S); if (name) $('log').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -627,7 +631,7 @@
       } else {
         who.appendChild(document.createTextNode(r.from === '(Opening)' ? 'Opening balance' : r.from === '(New camels)' ? '✨ New camels' : r.from));
         who.appendChild(el('span', 'arrow', '→'));
-        who.appendChild(document.createTextNode(r.to));
+        who.appendChild(document.createTextNode(r.to === '(Removed from circulation)' ? 'Removed from circulation' : r.to));
       }
       tx.appendChild(who);
       var sign = '', cls = 'amt';
@@ -684,13 +688,24 @@
       d.classList.toggle('hidden', d.getAttribute('data-for').split(' ').indexOf(a) === -1);
     });
     var labels = { penalty: 'Camels', addMember: 'Starting camels (new camels, 0 for none)',
-                   mintBank: 'New camels to create', mintAll: 'New camels for each account' };
+                   mintBank: 'New camels to create', mintAll: 'New camels for each account',
+                   removeCamels: 'Camels to remove from the Central Bank' };
     if (labels[a]) $('bAmountLabel').textContent = labels[a];
     $('bAmount').value = a === 'penalty' && S ? S.rules.fraud : a === 'addMember' ? 0 : '';
     var note = { mintBank: 'Creates new camels and adds them to the total in circulation.',
-                 mintAll: 'Creates new camels for every account (including the banker\'s) and adds them to the total.' };
+                 mintAll: 'Creates new camels for every account (including the banker\'s) and adds them to the total.',
+                 removeCamels: removeNote() };
+    $('bReason').placeholder = a === 'removeCamels' ? 'Required, e.g. a member left' : 'Optional, shown on the ledger';
     $('mintNote').textContent = note[a] || '';
     $('mintNote').classList.toggle('hidden', !note[a]);
+  }
+
+  function removeNote() {
+    if (!S) return '';
+    var bank = balanceOf(S.bank), held = (S.escrow && S.escrow.held) || 0, free = Math.max(bank - held, 0);
+    return 'Deletes camels from the Central Bank for good and lowers the total in circulation (now ' + S.total + '). ' +
+      'The bank can remove up to ' + free + ' camel' + (free === 1 ? '' : 's') +
+      (held ? ' (the ' + held + ' in escrow can\'t be touched)' : '') + '. This can\'t be undone.';
   }
 
   var joinName = '';
